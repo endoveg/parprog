@@ -110,19 +110,19 @@ vector<double> cycleReduction(int N, vector<double> &A, vector<double> &B, vecto
         auto x = vector<double> (N);
         // reverse
         {
-#pragma omp parallel
+            int index;
+#pragma omp parallel private(index)
 #pragma omp for
-            for (int i = 0; i < (N - 1) / 2; i++)
-                x[2 * i + 1] = x_reduced[i];
-#pragma omp single
-            {
-                x[0] = RHS[0] - C[0] * x[1];
-                x[N - 1] = RHS[N - 1] - A[N - 1] * x[N - 2];
+            for (int i = 1; i < N - 1; i++) {
+		index = i / 2;
+		if (i % 2)
+		    x[i] = x_reduced[index];
+		else
+                    x[i] = RHS[i] - A[i] * x_reduced[index-1] - C[i] * x_reduced[index];
             }
-#pragma omp for
-            for (int i = 2; i < N - 2; i += 2)
-                x[i] = RHS[i] - A[i] * x[i - 1] - C[i] * x[i + 1];
         }
+	x[0] = RHS[0] - C[0] * x[1];
+	x[N - 1] = RHS[N - 1] - A[N - 1] * x[N - 2];
         return x;
     }
 }
